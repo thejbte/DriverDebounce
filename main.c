@@ -6,15 +6,18 @@
 debounceData_t debounceData;
 void *function_systick(void *arg);   //thread function
 void *function_changePin(void *arg); //thread function
+void delay_ms(uint32_t ms);
+
 
 volatile int pinState = 1;
 
-//compile with gcc debounce.c main.c -lpthread -Wall -Wextra -o mai
+//compile with gcc debounce.c main.c -lpthread -Wall -Wextra -o main
 int main()
 {
   printf("Version %s", DEBOUNCE_CAPTION);
   pthread_t thread1, thread2;
-  debounceInit(&debounceData, 10, DEBOUNCE_PULL_UP);
+  debounceInit(&debounceData, 10,DEBOUNCE_COUNTERTICK,NULL, DEBOUNCE_PULL_UP);
+  // debounceInit(&debounceData, 10,DEBOUNCE_WAIT,delay_ms, DEBOUNCE_PULL_UP);
 
   pthread_create(&thread1, NULL, function_systick, NULL);
   pthread_create(&thread2, NULL, function_changePin, NULL);
@@ -66,3 +69,12 @@ void *function_systick(void *arg)
     debounceUpdate(&debounceData, pinState);
   }
 }
+
+void delay_ms(uint32_t ms){
+  ms =1000;
+  struct timespec time = {0, ms*1000000}; // 1000000000
+  nanosleep(&time, &time);
+  printf("delay -----");
+}
+
+//TODO: probar con micro

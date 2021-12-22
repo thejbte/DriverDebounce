@@ -22,6 +22,14 @@ extern "C"
 #define DEBOUNCE_LOW 0
 #define DEBOUNCE_HIGH 1
 
+typedef void (*delayFcn_t)(uint32_t );   /*ms*/
+
+ typedef enum
+  {
+    DEBOUNCE_COUNTERTICK = 0,
+    DEBOUNCE_WAIT
+  } debounceMode_t;
+
   typedef enum
   {
     DEBOUNCE_OFF = 0,
@@ -39,6 +47,8 @@ extern "C"
     volatile uint8_t delay; /*mS*/
     volatile uint8_t timeCounter;
     volatile uint8_t status;
+    uint8_t         mode;
+    delayFcn_t      delayFcn;
   } debounceData_t;
 
   /**
@@ -49,7 +59,7 @@ extern "C"
  * @example: Debounce_Init(&DebounceData,40, DEBOUNCE_PULL_UP);
  * 
 */
-  void debounceInit(debounceData_t *ptrData, uint32_t debounceTick, debounceState_t pull_x);
+  void debounceInit(debounceData_t *ptrData, uint32_t debounceTick, debounceMode_t mode, delayFcn_t delay, debounceState_t pull_x);
 
   /**
    * @brief Update the state of the button

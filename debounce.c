@@ -5,27 +5,40 @@
  */
 
 #include "debounce.h"
+#include <stdlib.h>
 /*
  =================================================================================================
               	  	  	  	 	##### Initialization functions #####
  =================================================================================================
     */
-
-void debounceInit(debounceData_t *ptrDataStruct, uint32_t debounceTick, debounceState_t pull_x)
+/* if mode is DEBOUNCE_COUNTERTICK then , debounceUpdate must be in function Systick else  if mode is DEBOUNCE_WAIT, debounceUpdate set in anywhere */
+void debounceInit(debounceData_t *ptrData, uint32_t debounceTick, debounceMode_t mode, delayFcn_t delay, debounceState_t pull_x)
 {
-    ptrDataStruct->delay = debounceTick <= 0 ? DEBOUNCE_DELAY : debounceTick; /*DELAY_DEBOUNCE;*/
-    ptrDataStruct->previousState_ = (pull_x == DEBOUNCE_PULL_UP) ? DEBOUNCE_HIGH : DEBOUNCE_LOW;
-    ptrDataStruct->previousState_ = (pull_x == DEBOUNCE_PULL_DOWN) ? DEBOUNCE_LOW : DEBOUNCE_HIGH;
-    ptrDataStruct->flagFalling = 0;
-    ptrDataStruct->flagRising = 0;
+    ptrData->delay = debounceTick <= 0 ? DEBOUNCE_DELAY : debounceTick; /*DELAY_DEBOUNCE;*/
+    ptrData->previousState_ = (pull_x == DEBOUNCE_PULL_UP) ? DEBOUNCE_HIGH : DEBOUNCE_LOW;
+    ptrData->previousState_ = (pull_x == DEBOUNCE_PULL_DOWN) ? DEBOUNCE_LOW : DEBOUNCE_HIGH;
+    ptrData->flagFalling = 0;
+    ptrData->flagRising = 0;
+    ptrData->mode = mode;
+    ptrData->delayFcn = delay;
 }
 
 void debounceUpdate(debounceData_t *ptrData, uint8_t pinState)
 {
+    int flagReadyTimeout = 0;
     if ((ptrData->previousState_ && !pinState) || (!ptrData->previousState_ && pinState))
     {
-        if (ptrData->timeCounter++ >= (ptrData->delay - 1))
-        {
+        if(DEBOUNCE_COUNTERTICK == ptrData->mode  ){
+
+            if (ptrData->timeCounter++ >= (ptrData->delay - 1))
+                flagReadyTimeout = 1;
+        }else if(DEBOUNCE_WAIT == ptrData->mode  ){
+            if( NULL != ptrData->delayFcn )
+                ptrData->delayFcn(ptrData->delay); /*blocking*/
+            flagReadyTimeout = 1;
+        }
+
+        if(1 == flagReadyTimeout){
             if (ptrData->previousState_ && !pinState)
             {
                 //ptrData->status = DEBOUNCE_FALLING;
@@ -40,9 +53,10 @@ void debounceUpdate(debounceData_t *ptrData, uint8_t pinState)
             }
             ptrData->previousState_ = pinState;
             ptrData->timeCounter = 0;
+            flagReadyTimeout = 0;
         }
+        ptrData->status = pinState; //update status
     }
-    ptrData->status = pinState; //update status
 }
 
 uint8_t debounceIsFallingEdgeCf(debounceData_t *ptrData)
