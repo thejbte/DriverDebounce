@@ -2,7 +2,8 @@
  * @file:   debounce.h
  * @breif:  This is a debounce driver for the debounce button.
  * @author: Julian Bustamante
- * @date:   25-Oct-2021
+ * @date:   18-Jul-2022
+ * @version 1.0.0
  */
 
 #ifndef DEBOUNCE_H
@@ -52,13 +53,15 @@ typedef void (*delayFcn_t)(uint32_t );   /*ms*/
   } debounceData_t;
 
   /**
- * @brief Initialize the debounce driver
- * @param ptrData: Pointer to the debounceData_t struct
- * @param debounceTick: Time in mS to debounce the button, depends on the from call debounceUpdate, default DebounceTick is 40 mS if is called from Systick (1ms)
- * @param pull_x: Pull up or down the pin
- * @example: Debounce_Init(&DebounceData,40, DEBOUNCE_PULL_UP);
- * 
-*/
+  * @brief Initialize the debounce driver
+  * @param ptrData: Pointer to the debounceData_t struct
+  * @param debounceTick: Time in mS to debounce the button, depends on the from call debounceUpdate, default DebounceTick is 40 mS if is called from Systick (1ms)
+  * @param mode: DEBOUNCE_COUNTERTICK or DEBOUNCE_WAIT
+  * @param delay: delayfuntion for DEBOUNCE_WAIT mode, blocking wait.
+  * @param pull_x: Pull up or down the pin
+  * @example Debounce_Init(&DebounceData, 40 ,DEBOUNCE_COUNTERTICK, NULL, DEBOUNCE_PULL_DOWN);
+  * @note debounceUpdate() must be call in function Systick for DEBOUNCE_COUNTERTICK or  set in anywhere for DEBOUNCE_WAIT
+ */
   void debounceInit(debounceData_t *ptrData, uint32_t debounceTick, debounceMode_t mode, delayFcn_t delay, debounceState_t pull_x);
 
   /**
