@@ -15,9 +15,9 @@ extern "C"
 #endif
 
 #include <stdint.h>
-
+#define DEBOUNCE_MULTIPLIER 1 /*1 mS*/
 #define DEBOUNCE_DELAY 40 /*40 mS*/
-#define DEBOUNCE_VERSION_NUMBER "2.0.0"
+#define DEBOUNCE_VERSION_NUMBER "2.1.0"
 #define DEBOUNCE_CAPTION "debounce " DEBOUNCE_VERSION_NUMBER /*Caption of the program*/
 
 #define DEBOUNCE_LOW 0
@@ -45,8 +45,9 @@ typedef void (*delayFcn_t)(uint32_t );   /*ms*/
   typedef struct
   {
     volatile uint8_t pinState, previousState_, flagFalling, flagRising;
-    volatile uint8_t delay; /*mS*/
+    volatile uint8_t delay_ms;
     volatile uint8_t timeCounter;
+    int tickMultiplier;
     volatile uint8_t status;
     uint8_t         mode;
     delayFcn_t      delayFcn;
@@ -54,19 +55,21 @@ typedef void (*delayFcn_t)(uint32_t );   /*ms*/
 
   /**
   * @brief Initialize the debounce driver
-  * @param ptrData: Pointer to the debounceData_t struct
-  * @param debounceTick: Time in mS to debounce the button, depends on the from call debounceUpdate, default DebounceTick is 40 mS if is called from Systick (1ms)
-  * @param mode: DEBOUNCE_COUNTERTICK or DEBOUNCE_WAIT
-  * @param delay: delayfuntion for DEBOUNCE_WAIT mode, blocking wait.
-  * @param pull_x: Pull up or down the pin
+  * @param ptrData Pointer to the debounceData_t struct
+  * @param debounceTickms Time in mS to debounce the button, depends on the from call debounceUpdate, default DebounceTick is 40 mS if is called from Systick (1ms)
+  * @param mode DEBOUNCE_COUNTERTICK so you need update 'debounceUpdate' inside Systick function
+                DEBOUNCE_WAIT you need update  'debounceUpdate' in other place where you want
+  * @param delayFcn delayfuntion for DEBOUNCE_WAIT mode, blocking wait.
+  * @param initialHwConfigState initial hardware (pin) config state, pull up or pull down
+  * @param tickMultiplier multiplier, 1 if sysTick is 1ms, 10 if sysTick is 100ms and so on.
   * @example Debounce_Init(&DebounceData, 40 ,DEBOUNCE_COUNTERTICK, NULL, DEBOUNCE_PULL_DOWN);
   * @note debounceUpdate() must be call in function Systick for DEBOUNCE_COUNTERTICK or  set in anywhere for DEBOUNCE_WAIT
  */
-  void debounceInit(debounceData_t *ptrData, uint32_t debounceTick, debounceMode_t mode, delayFcn_t delay, debounceState_t pull_x);
+  void debounceInit(debounceData_t *ptrData, uint32_t debounceTick_ms,  int tickMultiplier, debounceMode_t mode, delayFcn_t delayFcn, debounceState_t initialHwConfigState);
 
   /**
    * @brief Update the state of the button
-   * @param ptrData: Pointer to the debounceData_t struct 
+   * @param ptrData: Pointer to the debounceData_t struct
    * @param pinState: Pin to read
    * @example: Debounce_Update(&DebounceData,GPIO_ReadInputDataBit(GPIOA,GPIO_Pin_0)); called from Systick
   */
@@ -109,16 +112,16 @@ typedef void (*delayFcn_t)(uint32_t );   /*ms*/
   /**
    * @brief set delay time
    * @param ptrData: Pointer to the debounceData_t struct
-   * @param debounceTick: Delay time in mS, depends on the from call debounceUpdate
+   * @param debounceTick_ms: Delay time in mS, depends on the from call debounceUpdate
   */
-  void debounceSetDelay(debounceData_t *ptrData, uint32_t debounceTick);
+  void debounceSetDelay(debounceData_t *ptrData, uint32_t debounceTick_ms);
 
   /**
  * @brief set the pull up or pull down initial state
  * @param ptrData: Pointer to the debounceData_t struct
- * @param pull_x: DEBOUNCE_PULL_UP or DEBOUNCE_PULL_DOWN initial state
+ * @param initialHwConfigState: DEBOUNCE_PULL_UP or DEBOUNCE_PULL_DOWN initial state
 */
-  void debounceSetPull(debounceData_t *ptrData, debounceState_t pull_x);
+  void debounceSetPull(debounceData_t *ptrData, debounceState_t initialHwConfigState);
 
   /**
  * @brief clear the flag falling or rising
